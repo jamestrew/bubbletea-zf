@@ -45,6 +45,7 @@ func (c *CSlice) Seq2() iter.Seq2[int, string] {
 	}
 }
 
+// this is preferred over `getFilesChan` when things matter (more files)
 func getFilesChan(rootDir string) ([]string, error) {
 	pathsChan := make(chan string, 1000)
 	paths := make([]string, 0, 1000)

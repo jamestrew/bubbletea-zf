@@ -53,3 +53,23 @@ func BenchmarkGetFilesChan(b *testing.B) {
 		})
 	}
 }
+
+
+/*
+
+  Time Performance:
+  Repo      CSlice         Chan          Difference
+  current   1,514,251      1,565,650     +3% (slight edge CSlice)
+  plenary   3,902,207      4,206,110     +8% (slight edge CSlice)
+  crush     10,887,949     10,023,648    -8% (Chan faster!)
+  neovim    25,290,002     24,169,349    -4% (Chan faster!)
+  linux     221,734,199    208,510,015   -6% (Chan faster!)
+
+  Memory Usage:
+  Repo      CSlice         Chan          Difference
+  current   346,054        412,880       +19%
+  plenary   425,206        480,841       +13%
+  crush     842,002        842,845       ~0%
+  neovim    3,316,412      2,723,738     -18% (Chan better!)
+  linux     36,814,582     26,126,958    -31% (Chan better!)
+*/
