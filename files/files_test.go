@@ -1,10 +1,10 @@
-package main
+package files
 
 import (
 	"testing"
 )
 
-func BenchmarkGetFilesCSlice(b *testing.B) {
+func BenchmarkGetWithCSlice(b *testing.B) {
 	benchmarks := []struct {
 		name string
 		dir  string
@@ -20,16 +20,16 @@ func BenchmarkGetFilesCSlice(b *testing.B) {
 		b.Run(bm.name, func(b *testing.B) {
 			b.ResetTimer()
 			for b.Loop() {
-				_, err := getFilesCSlice(bm.dir)
+				_, err := GetWithCSlice(bm.dir)
 				if err != nil {
-					b.Fatalf("getFilesCSlice failed: %v", err)
+					b.Fatalf("GetWithCSlice failed: %v", err)
 				}
 			}
 		})
 	}
 }
 
-func BenchmarkGetFilesChan(b *testing.B) {
+func BenchmarkGetWithChannel(b *testing.B) {
 	benchmarks := []struct {
 		name string
 		dir  string
@@ -45,15 +45,14 @@ func BenchmarkGetFilesChan(b *testing.B) {
 		b.Run(bm.name, func(b *testing.B) {
 			b.ResetTimer()
 			for b.Loop() {
-				_, err := getFilesChan(bm.dir)
+				_, err := GetWithChannel(bm.dir)
 				if err != nil {
-					b.Fatalf("getFilesChan failed: %v", err)
+					b.Fatalf("GetWithChannel failed: %v", err)
 				}
 			}
 		})
 	}
 }
-
 
 /*
 
