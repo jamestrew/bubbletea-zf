@@ -6,6 +6,7 @@ require (
 	github.com/charlievieth/fastwalk v1.0.14
 	github.com/charmbracelet/bubbles/v2 v2.0.0-beta.1
 	github.com/charmbracelet/bubbletea/v2 v2.0.0-beta1
+	github.com/sahilm/fuzzy v0.1.1
 )
 
 require (
