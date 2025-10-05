@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/v2/textinput"
 	tea "github.com/charmbracelet/bubbletea/v2"
 )
 
@@ -13,28 +14,34 @@ const (
 )
 
 type model struct {
-	allFiles     []string
+	textInput     textinput.Model
+	allFiles      []string
 	filteredFiles []string
-	query        string
-	cursor       int
-	width        int
-	height       int
+	cursor        int
+	width         int
+	height        int
 }
 
 func initialModel(files []string) model {
+	ti := textinput.New()
+	ti.Placeholder = "Search files..."
+	ti.Focus()
+
 	return model{
+		textInput:     ti,
 		allFiles:      files,
 		filteredFiles: files[:min(listHeight, len(files))],
-		query:         "",
 		cursor:        0,
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -49,25 +56,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor > 0 {
 				m.cursor--
 			}
+			return m, nil
 
 		case "down", "ctrl+j":
 			if m.cursor < len(m.filteredFiles)-1 && m.cursor < listHeight-1 {
 				m.cursor++
 			}
-
-		case "backspace":
-			if len(m.query) > 0 {
-				m.query = m.query[:len(m.query)-1]
-				m.updateFilter()
-			}
-
-		default:
-			// Handle regular character input
-			key := msg.String()
-			if len(key) == 1 {
-				m.query += key
-				m.updateFilter()
-			}
+			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
@@ -75,14 +70,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 	}
 
-	return m, nil
+	m.textInput, cmd = m.textInput.Update(msg)
+
+	if m.textInput.Value() != "" {
+		m.updateFilter()
+	} else {
+		m.filteredFiles = m.allFiles[:min(listHeight, len(m.allFiles))]
+		m.cursor = 0
+	}
+
+	return m, cmd
 }
 
 func (m *model) updateFilter() {
 	// TODO(human): Implement fuzzy filtering logic here
 	// For now, just do simple substring matching
 	m.filteredFiles = []string{}
-	query := strings.ToLower(m.query)
+	query := strings.ToLower(m.textInput.Value())
 
 	for _, file := range m.allFiles {
 		if strings.Contains(strings.ToLower(file), query) {
@@ -102,7 +106,7 @@ func (m *model) updateFilter() {
 func (m model) View() string {
 	var b strings.Builder
 
-	b.WriteString(fmt.Sprintf("> %s\n", m.query))
+	b.WriteString(m.textInput.View() + "\n")
 	b.WriteString(strings.Repeat("─", 50) + "\n")
 
 	for i := range listHeight {
