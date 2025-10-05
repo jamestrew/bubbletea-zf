@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/v2/textinput"
@@ -45,28 +46,49 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		slog.Debug("Key pressed", "key", msg.String())
 		switch msg.String() {
 		case "ctrl+c", "esc":
+			slog.Info("User quit application")
 			return m, tea.Quit
 
 		case "enter":
-			// TODO: handle file selection
+			slog.Info("File selected", "file", m.filteredFiles[m.cursor], "cursor", m.cursor)
 			return m, tea.Quit
 
 		case "up", "ctrl+k":
 			if m.cursor > 0 {
 				m.cursor--
+				slog.Debug("Cursor moved up", "cursor", m.cursor)
 			}
 			return m, nil
 
 		case "down", "ctrl+j":
 			if m.cursor < len(m.filteredFiles)-1 && m.cursor < listHeight-1 {
 				m.cursor++
+				slog.Debug("Cursor moved down", "cursor", m.cursor)
 			}
 			return m, nil
+
+		case "backspace":
+			if len(m.query) > 0 {
+				m.query = m.query[:len(m.query)-1]
+				slog.Debug("Query updated", "query", m.query)
+				m.updateFilter()
+			}
+
+		default:
+			// Handle regular character input
+			key := msg.String()
+			if len(key) == 1 {
+				m.query += key
+				slog.Debug("Query updated", "query", m.query)
+				m.updateFilter()
+			}
 		}
 
 	case tea.WindowSizeMsg:
+		slog.Debug("Window resized", "width", msg.Width, "height", msg.Height)
 		m.width = msg.Width
 		m.height = msg.Height
 	}
@@ -96,6 +118,12 @@ func (m *model) updateFilter() {
 	if m.cursor >= len(m.filteredFiles) {
 		m.cursor = max(0, len(m.filteredFiles)-1)
 	}
+
+	slog.Debug("Filter updated",
+		"query", m.query,
+		"totalMatches", len(matches),
+		"displayed", len(m.filteredFiles),
+		"cursor", m.cursor)
 }
 
 func (m model) View() string {
