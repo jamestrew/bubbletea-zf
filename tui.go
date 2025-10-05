@@ -6,17 +6,18 @@ import (
 
 	"github.com/charmbracelet/bubbles/v2/textinput"
 	tea "github.com/charmbracelet/bubbletea/v2"
+	fuzzy "github.com/sahilm/fuzzy"
 )
 
-
 const (
-	listHeight = 10
+	listHeight = 24
 )
 
 type model struct {
 	textInput     textinput.Model
 	allFiles      []string
 	filteredFiles []string
+	query         string
 	cursor        int
 	width         int
 	height        int
@@ -83,21 +84,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) updateFilter() {
-	// TODO(human): Implement fuzzy filtering logic here
-	// For now, just do simple substring matching
 	m.filteredFiles = []string{}
-	query := strings.ToLower(m.textInput.Value())
+	matches := fuzzy.Find(m.query, m.allFiles)
 
-	for _, file := range m.allFiles {
-		if strings.Contains(strings.ToLower(file), query) {
-			m.filteredFiles = append(m.filteredFiles, file)
-			if len(m.filteredFiles) >= listHeight {
-				break
-			}
-		}
+	resultsCount := min(len(matches), listHeight)
+	m.filteredFiles = make([]string, 0, resultsCount)
+	for i := range resultsCount {
+		m.filteredFiles = append(m.filteredFiles, matches[i].Str)
 	}
 
-	// Reset cursor if out of bounds
 	if m.cursor >= len(m.filteredFiles) {
 		m.cursor = max(0, len(m.filteredFiles)-1)
 	}
