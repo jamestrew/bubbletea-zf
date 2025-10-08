@@ -69,22 +69,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				slog.Debug("Cursor moved down", "cursor", m.cursor)
 			}
 			return m, nil
-
-		case "backspace":
-			if len(m.query) > 0 {
-				m.query = m.query[:len(m.query)-1]
-				slog.Debug("Query updated", "query", m.query)
-				m.updateFilter()
-			}
-
-		default:
-			// Handle regular character input
-			key := msg.String()
-			if len(key) == 1 {
-				m.query += key
-				slog.Debug("Query updated", "query", m.query)
-				m.updateFilter()
-			}
 		}
 
 	case tea.WindowSizeMsg:
@@ -96,6 +80,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.textInput, cmd = m.textInput.Update(msg)
 
 	if m.textInput.Value() != "" {
+		m.query = m.textInput.Value()
 		m.updateFilter()
 	} else {
 		m.filteredFiles = m.allFiles[:min(listHeight, len(m.allFiles))]
