@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/v2/key"
 	"github.com/charmbracelet/bubbles/v2/textinput"
 	tea "github.com/charmbracelet/bubbletea/v2"
 	fuzzy "github.com/sahilm/fuzzy"
@@ -14,8 +15,37 @@ const (
 	listHeight = 24
 )
 
+type keyMap struct {
+	Up     key.Binding
+	Down   key.Binding
+	Select key.Binding
+	Quit   key.Binding
+}
+
+func newKeyMap() keyMap {
+	return keyMap{
+		Up: key.NewBinding(
+			key.WithKeys("up", "ctrl+p"),
+			key.WithHelp("↑/ctrl+p", "move up"),
+		),
+		Down: key.NewBinding(
+			key.WithKeys("down", "ctrl+n"),
+			key.WithHelp("↓/ctrl+n", "move down"),
+		),
+		Select: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "select file"),
+		),
+		Quit: key.NewBinding(
+			key.WithKeys("ctrl+c", "esc"),
+			key.WithHelp("ctrl+c/esc", "quit"),
+		),
+	}
+}
+
 type model struct {
 	textInput     textinput.Model
+	keys          keyMap
 	allFiles      []string
 	filteredFiles []string
 	query         string
@@ -29,8 +59,16 @@ func initialModel(files []string) model {
 	ti.Placeholder = "Search files..."
 	ti.Focus()
 
+	tiKeyMap := textinput.DefaultKeyMap()
+	tiKeyMap.CharacterForward.SetEnabled(false)
+	tiKeyMap.CharacterBackward.SetEnabled(false)
+	tiKeyMap.WordForward.SetEnabled(false)
+	tiKeyMap.WordBackward.SetEnabled(false)
+	ti.KeyMap = tiKeyMap
+
 	return model{
 		textInput:     ti,
+		keys:          newKeyMap(),
 		allFiles:      files,
 		filteredFiles: files[:min(listHeight, len(files))],
 		cursor:        0,
@@ -47,23 +85,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		slog.Debug("Key pressed", "key", msg.String())
-		switch msg.String() {
-		case "ctrl+c", "esc":
+
+		switch {
+		case key.Matches(msg, m.keys.Quit):
 			slog.Info("User quit application")
 			return m, tea.Quit
 
-		case "enter":
-			slog.Info("File selected", "file", m.filteredFiles[m.cursor], "cursor", m.cursor)
+		case key.Matches(msg, m.keys.Select):
+			if len(m.filteredFiles) > 0 {
+				slog.Info("File selected", "file", m.filteredFiles[m.cursor], "cursor", m.cursor)
+			}
 			return m, tea.Quit
 
-		case "up", "ctrl+k":
+		case key.Matches(msg, m.keys.Up):
 			if m.cursor > 0 {
 				m.cursor--
 				slog.Debug("Cursor moved up", "cursor", m.cursor)
 			}
 			return m, nil
 
-		case "down", "ctrl+j":
+		case key.Matches(msg, m.keys.Down):
 			if m.cursor < len(m.filteredFiles)-1 && m.cursor < listHeight-1 {
 				m.cursor++
 				slog.Debug("Cursor moved down", "cursor", m.cursor)
